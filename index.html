@@ -554,20 +554,22 @@ function getThemeLabels(){return settings.themes.map(k=>{const t=ALL_THEMES.find
 
 function buildSystemPrompt(){
   return `Tu es un assistant de veille scientifique médicale spécialisé pour un anesthésiste-réanimateur.
+Tu as accès à la recherche web. Utilise-la pour trouver les DOI et PMID exacts des études que tu cites.
 Tu dois répondre UNIQUEMENT avec un objet JSON valide, sans balises markdown, sans backticks, sans texte avant ou après.
-Pour chaque étude, cite précisément : auteurs principaux, titre exact, journal, année, volume et pages si connus. Ces références serviront à retrouver les DOI.
+RÈGLE ABSOLUE pour les URLs : n'inclus un champ "url" QUE si tu as vérifié le lien via recherche web et qu'il est réel. Si tu n'as pas pu vérifier, omets complètement le champ "url". Ne génère jamais un DOI ou PMID inventé.
 Format JSON attendu :
 {
   "actu": {
     "title": "Titre complet et exact de l'étude phare",
     "source": "Auteur1 et al., Journal, année;volume:pages",
     "level": "rct|meta|obs|reco|expert",
+    "url": "https://doi.org/... (uniquement si vérifié par recherche web)",
     "summary": "Résumé en 2-3 phrases.",
     "impact": "Impact clinique direct sur la pratique."
   },
   "briefs": [
-    {"theme": "Thème", "text": "Phrase d'essentiel avec référence précise (auteurs, journal, année).", "impl": "Implication pratique."},
-    {"theme": "Thème", "text": "Phrase d'essentiel avec référence précise (auteurs, journal, année).", "impl": "Implication pratique."}
+    {"theme": "Thème", "text": "Phrase d'essentiel avec référence précise.", "impl": "Implication pratique.", "url": "https://pubmed.ncbi.nlm.nih.gov/... (uniquement si vérifié)"},
+    {"theme": "Thème", "text": "Phrase d'essentiel avec référence précise.", "impl": "Implication pratique.", "url": "https://pubmed.ncbi.nlm.nih.gov/... (uniquement si vérifié)"}
   ],
   "surveiller": "Description d'un essai en cours ou guideline attendue.",
   "reflexe": {
