@@ -1,0 +1,18 @@
+{
+  "name": "Veille AR — Anesthésie-Réanimation",
+  "short_name": "Veille AR",
+  "description": "Veille médicale quotidienne pour anesthésistes-réanimateurs",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f8fb",
+  "theme_color": "#1a5f9e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

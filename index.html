@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Veille AR">
+<meta name="theme-color" content="#1a5f9e">
+<title>Veille AR — Anesthésie-Réanimation</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue-900: #0d3a5e;
+    --blue-800: #1a5f9e;
+    --blue-600: #2979c8;
+    --blue-400: #5b9fd8;
+    --blue-100: #daeaf7;
+    --blue-50:  #f0f7fd;
+    --slate-800: #1e2a35;
+    --slate-600: #3f5468;
+    --slate-400: #7a93a8;
+    --slate-200: #c8d8e4;
+    --slate-100: #e8f0f5;
+    --slate-50:  #f4f8fb;
+    --white: #ffffff;
+    --green-600: #1a7a4a;
+    --green-100: #d4f0e2;
+    --amber-600: #a05a10;
+    --amber-100: #fce8cc;
+    --red-600: #b02020;
+    --red-100: #fad8d8;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+    --shadow-sm: 0 1px 4px rgba(13,58,94,0.08);
+    --shadow-md: 0 4px 16px rgba(13,58,94,0.12);
+    --shadow-lg: 0 8px 32px rgba(13,58,94,0.16);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--slate-50);
+    color: var(--slate-800);
+    min-height: 100vh;
+    overflow-x: hidden;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .topbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--slate-100);
+    padding: 16px 20px 12px;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--blue-900); letter-spacing: -0.3px; }
+  .topbar-sub { font-size: 11px; color: var(--slate-400); font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; margin-top: 1px; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--slate-100); color: var(--slate-600); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: background 0.15s; }
+  .icon-btn:active { background: var(--slate-200); transform: scale(0.95); }
+
+  .page { display: none; padding: 0 0 90px; animation: fadeIn 0.2s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 480px;
+    background: var(--white); border-top: 1px solid var(--slate-100);
+    display: flex; z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 10px 0 8px; border: none; background: none; cursor: pointer;
+    color: var(--slate-400); font-size: 10px; font-weight: 500;
+    gap: 4px; transition: color 0.15s; font-family: 'DM Sans', sans-serif;
+  }
+  .nav-item svg { width: 22px; height: 22px; }
+  .nav-item.active { color: var(--blue-800); }
+  .nav-item.active svg { stroke: var(--blue-800); }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, var(--blue-900) 0%, var(--blue-800) 60%, var(--blue-600) 100%);
+    padding: 28px 20px 32px; color: white; position: relative; overflow: hidden;
+  }
+  .hero::before { content:''; position:absolute; top:-40px; right:-40px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .hero::after  { content:''; position:absolute; bottom:-60px; left:-20px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .hero-date { font-size: 12px; font-weight: 500; opacity: 0.7; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .hero-title { font-family: 'DM Serif Display', serif; font-size: 26px; line-height: 1.2; margin-bottom: 6px; }
+  .hero-sub { font-size: 13px; opacity: 0.75; line-height: 1.5; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 500; margin-top: 14px; }
+  .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: #7ee8a2; }
+
+  .generate-btn {
+    width: calc(100% - 40px); margin: 20px 20px 0;
+    padding: 16px 20px; background: var(--blue-800); color: white;
+    border: none; border-radius: var(--radius-lg);
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: var(--shadow-md); transition: all 0.15s;
+  }
+  .generate-btn:active { transform: scale(0.98); }
+  .generate-btn.loading { background: var(--slate-400); pointer-events: none; }
+  .generate-btn svg { width: 20px; height: 20px; }
+
+  .section-header { padding: 20px 20px 8px; display: flex; align-items: center; justify-content: space-between; }
+  .section-title { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--slate-800); }
+  .section-link { font-size: 12px; color: var(--blue-600); font-weight: 500; cursor: pointer; }
+
+  /* CARDS */
+  .veille-card { margin: 0 20px 12px; background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid var(--slate-100); overflow: hidden; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+  .veille-card:active { transform: scale(0.99); box-shadow: var(--shadow-md); }
+  .veille-card-header { padding: 14px 16px 10px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .veille-card-date { font-size: 11px; font-weight: 600; color: var(--blue-600); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
+  .veille-card-title { font-size: 14px; font-weight: 600; color: var(--slate-800); line-height: 1.4; }
+  .veille-card-preview { font-size: 13px; color: var(--slate-400); line-height: 1.5; padding: 0 16px 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .veille-card-footer { padding: 10px 16px; border-top: 1px solid var(--slate-100); display: flex; align-items: center; justify-content: space-between; }
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; background: var(--blue-50); color: var(--blue-800); }
+  .fav-btn { width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--slate-300); font-size: 16px; display: flex; align-items: center; justify-content: center; transition: color 0.15s, transform 0.15s; }
+  .fav-btn.active { color: #f0a020; }
+  .fav-btn:active { transform: scale(1.3); }
+
+  /* DETAIL */
+  .detail-overlay { display: none; position: fixed; inset: 0; background: var(--slate-50); z-index: 200; overflow-y: auto; animation: slideUp 0.25s ease; }
+  .detail-overlay.open { display: block; }
+  @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .detail-topbar { background: var(--white); padding: 14px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--slate-100); position: sticky; top: 0; z-index: 10; }
+  .back-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--slate-100); color: var(--slate-600); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; }
+  .detail-topbar-title { font-size: 15px; font-weight: 600; color: var(--slate-800); flex: 1; }
+  .detail-body { padding: 20px; }
+  .detail-date { font-size: 11px; font-weight: 600; color: var(--blue-600); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 12px; }
+  .detail-main-title { font-family: 'DM Serif Display', serif; font-size: 24px; line-height: 1.25; color: var(--blue-900); margin-bottom: 20px; }
+  .section-block { margin-bottom: 22px; }
+  .section-block-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue-600); border-left: 3px solid var(--blue-600); padding-left: 8px; margin-bottom: 12px; }
+  .actu-phare-box { background: var(--blue-50); border: 1px solid var(--blue-100); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; }
+  .actu-source { font-size: 11px; font-weight: 600; color: var(--blue-800); background: var(--blue-100); border-radius: 4px; padding: 2px 7px; display: inline-block; margin-bottom: 8px; }
+  .actu-title { font-size: 14px; font-weight: 600; color: var(--blue-900); margin-bottom: 8px; line-height: 1.4; }
+  .actu-body { font-size: 13px; color: var(--slate-600); line-height: 1.7; }
+  .impact-box { background: var(--green-100); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--green-600); line-height: 1.6; margin-top: 10px; }
+  .impact-label { font-weight: 600; margin-bottom: 4px; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .brief-item { background: var(--white); border: 1px solid var(--slate-100); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px; }
+  .brief-theme { font-size: 11px; font-weight: 600; color: var(--blue-800); background: var(--blue-50); border-radius: 4px; padding: 2px 7px; display: inline-block; margin-bottom: 8px; }
+  .brief-text { font-size: 13px; color: var(--slate-600); line-height: 1.65; }
+  .brief-impl { font-size: 12px; color: var(--slate-500); line-height: 1.6; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--slate-100); }
+  .brief-impl strong { color: var(--slate-700); }
+  .surveiller-box { background: var(--amber-100); border-radius: var(--radius-md); padding: 14px; font-size: 13px; color: var(--amber-600); line-height: 1.65; }
+  .reflexe-box { background: var(--slate-800); border-radius: var(--radius-md); padding: 16px; color: white; }
+  .reflexe-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.5; margin-bottom: 8px; }
+  .reflexe-body { font-size: 13px; line-height: 1.7; opacity: 0.9; }
+  .reflexe-mnemonic { margin-top: 12px; padding: 10px 12px; background: rgba(255,255,255,0.08); border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; }
+  .question-box { background: var(--white); border: 1px solid var(--blue-100); border-radius: var(--radius-md); padding: 14px; font-size: 13px; color: var(--slate-600); line-height: 1.6; font-style: italic; }
+  .level-badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; margin-left: 6px; }
+  .level-rct  { background: #d4f0e2; color: #1a7a4a; }
+  .level-meta { background: #daeaf7; color: #1a5f9e; }
+  .level-obs  { background: #fce8cc; color: #a05a10; }
+  .level-reco { background: #e8e8f8; color: #4040aa; }
+
+  /* ARCHIVE */
+  .archive-search { margin: 16px 20px 8px; position: relative; }
+  .archive-search input { width: 100%; padding: 10px 16px 10px 40px; border: 1px solid var(--slate-200); border-radius: var(--radius-md); font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--slate-800); background: var(--white); }
+  .archive-search input:focus { outline: none; border-color: var(--blue-400); }
+  .archive-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 16px; pointer-events: none; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--slate-400); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; line-height: 1.6; }
+
+  /* SETTINGS */
+  .settings-section { padding: 20px 20px 0; }
+  .settings-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--slate-800); margin-bottom: 14px; }
+  .settings-card { background: var(--white); border: 1px solid var(--slate-100); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 16px; }
+  .settings-row { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--slate-100); }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-label { font-size: 14px; color: var(--slate-800); font-weight: 500; }
+  .settings-row-sub { font-size: 12px; color: var(--slate-400); margin-top: 2px; }
+  .theme-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; }
+  .theme-chip { padding: 7px 13px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid var(--slate-200); background: var(--white); color: var(--slate-600); cursor: pointer; transition: all 0.15s; }
+  .theme-chip.on { background: var(--blue-50); border-color: var(--blue-400); color: var(--blue-800); }
+  .save-btn { margin: 16px 20px; width: calc(100% - 40px); padding: 13px; background: var(--blue-800); color: white; border: none; border-radius: var(--radius-md); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .save-btn:active { background: var(--blue-900); }
+
+  /* LOADER */
+  .loader-overlay { display: none; position: fixed; inset: 0; background: rgba(13,58,94,0.6); z-index: 300; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+  .loader-overlay.show { display: flex; }
+  .loader-card { background: white; border-radius: var(--radius-xl); padding: 28px 32px; text-align: center; width: 260px; box-shadow: var(--shadow-lg); }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--blue-100); border-top-color: var(--blue-800); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-text { font-size: 14px; color: var(--slate-600); line-height: 1.6; }
+  .loader-step { font-size: 12px; color: var(--slate-400); margin-top: 6px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: var(--slate-800); color: white; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: 500; z-index: 400; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Veille AR</div>
+    <div class="topbar-sub">Anesthésie · Réanimation</div>
+  </div>
+  <div><button class="icon-btn">🔔</button></div>
+</div>
+
+<!-- PAGE HOME -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="hero-date" id="hero-date"></div>
+    <div class="hero-title">Bonjour, Dr.</div>
+    <div class="hero-sub">Votre veille médicale personnalisée<br>en 5 minutes de lecture</div>
+    <div class="hero-badge"><div class="badge-dot"></div><span id="hero-count">0 veille disponible</span></div>
+  </div>
+  <button class="generate-btn" id="gen-btn" onclick="generateVeille()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z"/></svg>
+    Générer la veille du jour
+  </button>
+  <div class="section-header">
+    <div class="section-title">Veilles récentes</div>
+    <div class="section-link" onclick="goPage('archive')">Voir tout</div>
+  </div>
+  <div id="recent-list"></div>
+  <div id="recent-empty" class="empty-state" style="display:none">
+    <div class="empty-icon">📋</div>
+    <div class="empty-text">Aucune veille générée.<br>Appuyez sur le bouton ci-dessus<br>pour commencer.</div>
+  </div>
+</div>
+
+<!-- PAGE ARCHIVE -->
+<div id="page-archive" class="page">
+  <div class="archive-search">
+    <span class="archive-search-icon">🔍</span>
+    <input type="text" placeholder="Rechercher dans les veilles..." id="search-input" oninput="filterArchive()">
+  </div>
+  <div id="archive-list"></div>
+  <div id="archive-empty" class="empty-state" style="display:none">
+    <div class="empty-icon">📁</div>
+    <div class="empty-text">Aucune veille archivée.</div>
+  </div>
+</div>
+
+<!-- PAGE FAVORIS -->
+<div id="page-favs" class="page">
+  <div style="padding:20px 20px 8px">
+    <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--slate-800)">Favoris</div>
+  </div>
+  <div id="favs-list"></div>
+  <div id="favs-empty" class="empty-state" style="display:none">
+    <div class="empty-icon">⭐</div>
+    <div class="empty-text">Aucun favori.<br>Appuyez sur l'étoile d'une veille<br>pour la sauvegarder.</div>
+  </div>
+</div>
+
+<!-- PAGE SETTINGS -->
+<div id="page-settings" class="page">
+  <div class="settings-section">
+    <div class="settings-title">Mon profil</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div>
+          <div class="settings-row-label">Spécialité</div>
+          <div class="settings-row-sub">Anesthésiste-réanimateur</div>
+        </div>
+        <div style="font-size:13px;color:var(--blue-600);font-weight:500">✓</div>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-row-label">Durée de lecture</div></div>
+        <select id="dur-select" style="font-size:13px;border:1px solid #c8d8e4;border-radius:6px;padding:4px 8px;color:#1a5f9e;background:white;font-family:'DM Sans',sans-serif">
+          <option value="5" selected>5 min</option>
+          <option value="3">3 min</option>
+          <option value="10">10 min</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-row-label">Langue</div></div>
+        <select id="lang-select" style="font-size:13px;border:1px solid #c8d8e4;border-radius:6px;padding:4px 8px;color:#1a5f9e;background:white;font-family:'DM Sans',sans-serif">
+          <option value="français" selected>Français</option>
+          <option value="anglais">Anglais</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="settings-title">Thématiques</div>
+    <div class="settings-card">
+      <div class="theme-chips" id="theme-chips-settings"></div>
+    </div>
+
+    <!-- INFO PROXY -->
+    <div style="background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--radius-md);padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--blue-800);margin-bottom:6px">🔒 Connexion sécurisée</div>
+      <div style="font-size:12px;color:var(--slate-600);line-height:1.6">Votre clé API est stockée sur votre serveur Netlify, jamais dans l'app. La connexion passe par votre proxy personnel.</div>
+    </div>
+  </div>
+  <button class="save-btn" onclick="saveSettings()">Enregistrer les réglages</button>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-home" onclick="goPage('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Accueil
+  </button>
+  <button class="nav-item" id="nav-archive" onclick="goPage('archive')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9.5" y1="14.5" x2="14.5" y2="14.5"/></svg>
+    Archives
+  </button>
+  <button class="nav-item" id="nav-favs" onclick="goPage('favs')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    Favoris
+  </button>
+  <button class="nav-item" id="nav-settings" onclick="goPage('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    Réglages
+  </button>
+</nav>
+
+<!-- DETAIL OVERLAY -->
+<div class="detail-overlay" id="detail-overlay">
+  <div class="detail-topbar">
+    <button class="back-btn" onclick="closeDetail()">←</button>
+    <div class="detail-topbar-title" id="detail-topbar-title">Veille médicale</div>
+    <button class="icon-btn" id="detail-fav-btn" onclick="toggleFavDetail()" style="background:none;font-size:20px">☆</button>
+  </div>
+  <div class="detail-body" id="detail-body"></div>
+</div>
+
+<!-- LOADER -->
+<div class="loader-overlay" id="loader">
+  <div class="loader-card">
+    <div class="spinner"></div>
+    <div class="loader-text">Génération en cours…</div>
+    <div class="loader-step" id="loader-step">Recherche des publications récentes</div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const ALL_THEMES = [
+  {key:'pharmacologie', label:'Pharmacologie péri-op'},
+  {key:'analgésie',     label:'Analgésie multimodale'},
+  {key:'hémodynamique', label:'Réa hémodynamique'},
+  {key:'alr',           label:'ALR & échoguidage'},
+  {key:'ventilation',   label:'Ventilation mécanique'},
+  {key:'vad',           label:'Voies aériennes difficiles'},
+  {key:'nutrition',     label:'Nutrition soins critiques'},
+  {key:'infectiologie', label:'Infectiologie réa'},
+  {key:'pédiatrie',     label:'Anesthésie pédiatrique'},
+  {key:'cardio',        label:'Cardio péri-opératoire'},
+];
+
+let settings = JSON.parse(localStorage.getItem('ar_settings') || 'null') || {
+  themes: ['pharmacologie','analgésie','hémodynamique','vad','infectiologie'],
+  duration: '5',
+  lang: 'français'
+};
+let veilles = JSON.parse(localStorage.getItem('ar_veilles') || '[]');
+let favs    = new Set(JSON.parse(localStorage.getItem('ar_favs') || '[]'));
+let currentDetail = null;
+let loaderInterval = null;
+
+function init() {
+  document.getElementById('hero-date').textContent = formatDate(new Date());
+  updateHeroCount();
+  renderThemeChips();
+  renderRecent();
+  loadSettings();
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+function updateHeroCount() {
+  const n = veilles.length;
+  document.getElementById('hero-count').textContent = n===0 ? 'Aucune veille générée' : `${n} veille${n>1?'s':''} archivée${n>1?'s':''}`;
+}
+
+function goPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if(name==='archive') renderArchive();
+  if(name==='favs') renderFavs();
+}
+
+function renderCard(v, container) {
+  const card = document.createElement('div');
+  card.className = 'veille-card';
+  const isFav = favs.has(v.id);
+  const themes = (v.themes||[]).slice(0,3);
+  card.innerHTML = `
+    <div class="veille-card-header">
+      <div style="flex:1">
+        <div class="veille-card-date">${v.date}</div>
+        <div class="veille-card-title">${v.actu?.title||'Veille médicale'}</div>
+      </div>
+    </div>
+    <div class="veille-card-preview">${v.actu?.summary||''}</div>
+    <div class="veille-card-footer">
+      <div class="tag-row">${themes.map(t=>`<div class="tag">${t}</div>`).join('')}</div>
+      <button class="fav-btn ${isFav?'active':''}" onclick="event.stopPropagation();toggleFav('${v.id}',this)">${isFav?'★':'☆'}</button>
+    </div>`;
+  card.addEventListener('click', ()=>openDetail(v.id));
+  container.appendChild(card);
+}
+
+function renderRecent() {
+  const list=document.getElementById('recent-list'), empty=document.getElementById('recent-empty');
+  list.innerHTML='';
+  const recent=[...veilles].reverse().slice(0,3);
+  if(!recent.length){empty.style.display='block';return;}
+  empty.style.display='none';
+  recent.forEach(v=>renderCard(v,list));
+}
+function renderArchive(filter='') {
+  const list=document.getElementById('archive-list'), empty=document.getElementById('archive-empty');
+  list.innerHTML='';
+  let items=[...veilles].reverse();
+  if(filter) items=items.filter(v=>
+    v.date?.toLowerCase().includes(filter)||
+    v.actu?.title?.toLowerCase().includes(filter)||
+    v.actu?.summary?.toLowerCase().includes(filter)
+  );
+  if(!items.length){empty.style.display='block';return;}
+  empty.style.display='none';
+  items.forEach(v=>renderCard(v,list));
+}
+function renderFavs() {
+  const list=document.getElementById('favs-list'), empty=document.getElementById('favs-empty');
+  list.innerHTML='';
+  const items=[...veilles].reverse().filter(v=>favs.has(v.id));
+  if(!items.length){empty.style.display='block';return;}
+  empty.style.display='none';
+  items.forEach(v=>renderCard(v,list));
+}
+function filterArchive(){renderArchive(document.getElementById('search-input').value.toLowerCase());}
+
+function getLevelLabel(lvl){return{rct:'RCT',meta:'Méta-analyse',obs:'Observationnel',reco:'Recommandations',expert:'Expert'}[lvl]||'RCT';}
+
+function openDetail(id) {
+  const v=veilles.find(x=>x.id===id); if(!v)return;
+  currentDetail=v;
+  const isFav=favs.has(v.id);
+  document.getElementById('detail-fav-btn').textContent=isFav?'★':'☆';
+  document.getElementById('detail-fav-btn').style.color=isFav?'#f0a020':'#7a93a8';
+  document.getElementById('detail-topbar-title').textContent=v.date;
+  let html=`<div class="detail-date">${v.date}</div><div class="detail-main-title">Veille médicale du jour</div>`;
+  if(v.actu) html+=`<div class="section-block"><div class="section-block-label">Actu phare</div>
+    <div class="actu-phare-box">
+      <div class="actu-source">${v.actu.source||''} <span class="level-badge level-${v.actu.level||'rct'}">${getLevelLabel(v.actu.level)}</span></div>
+      <div class="actu-title">${v.actu.title||''}</div>
+      <div class="actu-body">${v.actu.summary||''}</div>
+      ${v.actu.impact?`<div class="impact-box"><div class="impact-label">Impact clinique</div>${v.actu.impact}</div>`:''}
+    </div></div>`;
+  if(v.briefs?.length) {
+    html+=`<div class="section-block"><div class="section-block-label">En bref</div>`;
+    v.briefs.forEach(b=>{html+=`<div class="brief-item"><div class="brief-theme">${b.theme||''}</div><div class="brief-text">${b.text||''}</div>${b.impl?`<div class="brief-impl"><strong>→ Implication :</strong> ${b.impl}</div>`:''}</div>`;});
+    html+=`</div>`;
+  }
+  if(v.surveiller) html+=`<div class="section-block"><div class="section-block-label">À surveiller</div><div class="surveiller-box">⚠️ ${v.surveiller}</div></div>`;
+  if(v.reflexe) html+=`<div class="section-block"><div class="section-block-label">Réflexe du jour</div>
+    <div class="reflexe-box">
+      <div class="reflexe-title">Point clinique actionnable</div>
+      <div class="reflexe-body">${v.reflexe.text||''}</div>
+      ${v.reflexe.mnemonic?`<div class="reflexe-mnemonic">💡 ${v.reflexe.mnemonic}</div>`:''}
+    </div></div>`;
+  if(v.question) html+=`<div class="section-block"><div class="section-block-label">Pour aller plus loin</div><div class="question-box">❓ ${v.question}</div></div>`;
+  document.getElementById('detail-body').innerHTML=html;
+  document.getElementById('detail-overlay').classList.add('open');
+  document.getElementById('detail-overlay').scrollTop=0;
+}
+function closeDetail(){document.getElementById('detail-overlay').classList.remove('open');currentDetail=null;}
+
+function toggleFav(id,btn){
+  if(favs.has(id)){favs.delete(id);if(btn){btn.textContent='☆';btn.classList.remove('active');}}
+  else{favs.add(id);if(btn){btn.textContent='★';btn.classList.add('active');}showToast('Ajouté aux favoris');}
+  localStorage.setItem('ar_favs',JSON.stringify([...favs]));
+  renderFavs();
+}
+function toggleFavDetail(){
+  if(!currentDetail)return;
+  const id=currentDetail.id, btn=document.getElementById('detail-fav-btn');
+  if(favs.has(id)){favs.delete(id);btn.textContent='☆';btn.style.color='#7a93a8';}
+  else{favs.add(id);btn.textContent='★';btn.style.color='#f0a020';showToast('Ajouté aux favoris');}
+  localStorage.setItem('ar_favs',JSON.stringify([...favs]));
+  renderRecent();renderFavs();
+}
+
+function renderThemeChips(){
+  const c=document.getElementById('theme-chips-settings'); c.innerHTML='';
+  ALL_THEMES.forEach(t=>{
+    const chip=document.createElement('div');
+    chip.className='theme-chip'+(settings.themes.includes(t.key)?' on':'');
+    chip.textContent=t.label;
+    chip.onclick=()=>{
+      if(settings.themes.includes(t.key)){if(settings.themes.length>1){settings.themes=settings.themes.filter(x=>x!==t.key);chip.classList.remove('on');}}
+      else{settings.themes.push(t.key);chip.classList.add('on');}
+    };
+    c.appendChild(chip);
+  });
+}
+function loadSettings(){
+  document.getElementById('dur-select').value=settings.duration;
+  document.getElementById('lang-select').value=settings.lang;
+}
+function saveSettings(){
+  settings.duration=document.getElementById('dur-select').value;
+  settings.lang=document.getElementById('lang-select').value;
+  localStorage.setItem('ar_settings',JSON.stringify(settings));
+  showToast('Réglages enregistrés');
+}
+
+const LOADER_STEPS=['Recherche des publications récentes…','Analyse des études périopératoires…','Sélection des actualités pertinentes…','Structuration de la veille…','Finalisation du contenu…'];
+function showLoader(){
+  document.getElementById('loader').classList.add('show');
+  let i=0; document.getElementById('loader-step').textContent=LOADER_STEPS[0];
+  loaderInterval=setInterval(()=>{i=(i+1)%LOADER_STEPS.length;document.getElementById('loader-step').textContent=LOADER_STEPS[i];},2200);
+}
+function hideLoader(){document.getElementById('loader').classList.remove('show');clearInterval(loaderInterval);}
+
+function getThemeLabels(){return settings.themes.map(k=>{const t=ALL_THEMES.find(x=>x.key===k);return t?t.label:k;}).join(', ');}
+
+function buildSystemPrompt(){
+  return `Tu es un assistant de veille scientifique médicale spécialisé pour un anesthésiste-réanimateur.
+Tu dois répondre UNIQUEMENT avec un objet JSON valide, sans balises markdown, sans backticks, sans texte avant ou après.
+Format JSON attendu :
+{
+  "actu": {
+    "title": "Titre complet de l'étude phare",
+    "source": "Auteurs, Journal, année",
+    "level": "rct|meta|obs|reco|expert",
+    "summary": "Résumé en 2-3 phrases.",
+    "impact": "Impact clinique direct sur la pratique."
+  },
+  "briefs": [
+    {"theme": "Thème", "text": "Phrase d'essentiel.", "impl": "Implication pratique."},
+    {"theme": "Thème", "text": "Phrase d'essentiel.", "impl": "Implication pratique."}
+  ],
+  "surveiller": "Description d'un essai en cours ou guideline attendue.",
+  "reflexe": {
+    "text": "Point pratique actionnable avec étapes si besoin.",
+    "mnemonic": "Mnémotechnique ou formule courte optionnelle."
+  },
+  "question": "Une question de réflexion pour approfondir."
+}`;
+}
+
+function buildUserPrompt(){
+  const date=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  return `Date d'aujourd'hui : ${date}.
+Génère une veille médicale de ${settings.duration} minutes de lecture en ${settings.lang}.
+Thématiques prioritaires : ${getThemeLabels()}.
+Sources à privilégier : Anesthesiology, BJA, NEJM, Lancet, JAMA, Critical Care Medicine, Intensive Care Medicine, recommandations SFAR et ESA.
+Privilégier les données des 3 derniers mois. Indiquer le niveau de preuve.
+Retourne uniquement le JSON, aucun autre texte.`;
+}
+
+async function generateVeille(){
+  showLoader();
+  document.getElementById('gen-btn').classList.add('loading');
+  try {
+    // Appel via le proxy Netlify — pas d'exposition de clé API côté client
+    const resp = await fetch('/api/claude', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:2000,
+        system: buildSystemPrompt(),
+        messages:[{role:'user', content: buildUserPrompt()}]
+      })
+    });
+    if(!resp.ok) throw new Error('Erreur serveur: '+resp.status);
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error.message||'Erreur API');
+    const raw=data.content[0].text;
+    const clean=raw.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+    const veille={
+      id:Date.now().toString(),
+      date:new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}),
+      themes:settings.themes.slice(0,3).map(k=>{const t=ALL_THEMES.find(x=>x.key===k);return t?t.label:k;}),
+      ...parsed
+    };
+    veilles.push(veille);
+    localStorage.setItem('ar_veilles',JSON.stringify(veilles));
+    updateHeroCount(); renderRecent();
+    hideLoader(); document.getElementById('gen-btn').classList.remove('loading');
+    showToast('Veille générée !');
+    openDetail(veille.id);
+  } catch(e){
+    hideLoader(); document.getElementById('gen-btn').classList.remove('loading');
+    showToast('Erreur : '+e.message.slice(0,50));
+    console.error(e);
+  }
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+init();
+</script>
+</body>
+</html>
