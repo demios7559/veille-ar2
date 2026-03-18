@@ -165,6 +165,25 @@
   .level-meta { background: #daeaf7; color: #1a5f9e; }
   .level-obs  { background: #fce8cc; color: #a05a10; }
   .level-reco { background: #e8e8f8; color: #4040aa; }
+  .source-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 12px; padding: 8px 14px;
+    background: var(--blue-800); color: white;
+    border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 600;
+    text-decoration: none; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .source-link:active { background: var(--blue-900); }
+  .brief-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 8px; padding: 5px 10px;
+    background: var(--blue-50); color: var(--blue-800);
+    border: 1px solid var(--blue-100);
+    border-radius: var(--radius-sm);
+    font-size: 11px; font-weight: 600;
+    text-decoration: none;
+  }
 
   /* ARCHIVE */
   .archive-search { margin: 16px 20px 8px; position: relative; }
@@ -463,10 +482,11 @@ function openDetail(id) {
       <div class="actu-title">${v.actu.title||''}</div>
       <div class="actu-body">${v.actu.summary||''}</div>
       ${v.actu.impact?`<div class="impact-box"><div class="impact-label">Impact clinique</div>${v.actu.impact}</div>`:''}
+      ${v.actu.url?`<a class="source-link" href="${v.actu.url}" target="_blank" rel="noopener">📄 Accéder à la publication</a>`:''}
     </div></div>`;
   if(v.briefs?.length) {
     html+=`<div class="section-block"><div class="section-block-label">En bref</div>`;
-    v.briefs.forEach(b=>{html+=`<div class="brief-item"><div class="brief-theme">${b.theme||''}</div><div class="brief-text">${b.text||''}</div>${b.impl?`<div class="brief-impl"><strong>→ Implication :</strong> ${b.impl}</div>`:''}</div>`;});
+    v.briefs.forEach(b=>{html+=`<div class="brief-item"><div class="brief-theme">${b.theme||''}</div><div class="brief-text">${b.text||''}</div>${b.impl?`<div class="brief-impl"><strong>→ Implication :</strong> ${b.impl}</div>`:''}${b.url?`<a class="brief-link" href="${b.url}" target="_blank" rel="noopener">📄 Source</a>`:''}</div>`;});
     html+=`</div>`;
   }
   if(v.surveiller) html+=`<div class="section-block"><div class="section-block-label">À surveiller</div><div class="surveiller-box">⚠️ ${v.surveiller}</div></div>`;
@@ -535,18 +555,20 @@ function getThemeLabels(){return settings.themes.map(k=>{const t=ALL_THEMES.find
 function buildSystemPrompt(){
   return `Tu es un assistant de veille scientifique médicale spécialisé pour un anesthésiste-réanimateur.
 Tu dois répondre UNIQUEMENT avec un objet JSON valide, sans balises markdown, sans backticks, sans texte avant ou après.
+Pour chaque étude ou publication, fournis si possible un lien DOI ou PubMed (format https://doi.org/... ou https://pubmed.ncbi.nlm.nih.gov/...). Si tu n'es pas certain du lien exact, utilise une recherche PubMed générique : https://pubmed.ncbi.nlm.nih.gov/?term= suivi des mots-clés de l'étude encodés en URL. Ne génère jamais un lien inventé vers un article inexistant.
 Format JSON attendu :
 {
   "actu": {
     "title": "Titre complet de l'étude phare",
     "source": "Auteurs, Journal, année",
     "level": "rct|meta|obs|reco|expert",
+    "url": "https://doi.org/... ou https://pubmed.ncbi.nlm.nih.gov/...",
     "summary": "Résumé en 2-3 phrases.",
     "impact": "Impact clinique direct sur la pratique."
   },
   "briefs": [
-    {"theme": "Thème", "text": "Phrase d'essentiel.", "impl": "Implication pratique."},
-    {"theme": "Thème", "text": "Phrase d'essentiel.", "impl": "Implication pratique."}
+    {"theme": "Thème", "text": "Phrase d'essentiel.", "impl": "Implication pratique.", "url": "https://pubmed.ncbi.nlm.nih.gov/..."},
+    {"theme": "Thème", "text": "Phrase d'essentiel.", "impl": "Implication pratique.", "url": "https://pubmed.ncbi.nlm.nih.gov/..."}
   ],
   "surveiller": "Description d'un essai en cours ou guideline attendue.",
   "reflexe": {
