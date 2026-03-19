@@ -468,6 +468,11 @@ function filterArchive(){renderArchive(document.getElementById('search-input').v
 
 function getLevelLabel(lvl){return{rct:'RCT',meta:'Méta-analyse',obs:'Observationnel',reco:'Recommandations',expert:'Expert'}[lvl]||'RCT';}
 
+function pubmedUrl(terms) {
+  if (!terms) return null;
+  return 'https://pubmed.ncbi.nlm.nih.gov/?term=' + encodeURIComponent(terms);
+}
+
 function openDetail(id) {
   const v=veilles.find(x=>x.id===id); if(!v)return;
   currentDetail=v;
@@ -476,17 +481,23 @@ function openDetail(id) {
   document.getElementById('detail-fav-btn').style.color=isFav?'#f0a020':'#7a93a8';
   document.getElementById('detail-topbar-title').textContent=v.date;
   let html=`<div class="detail-date">${v.date}</div><div class="detail-main-title">Veille médicale du jour</div>`;
-  if(v.actu) html+=`<div class="section-block"><div class="section-block-label">Actu phare</div>
+  if(v.actu) {
+    const link = v.actu.url || pubmedUrl(v.actu.pubmed);
+    html+=`<div class="section-block"><div class="section-block-label">Actu phare</div>
     <div class="actu-phare-box">
       <div class="actu-source">${v.actu.source||''} <span class="level-badge level-${v.actu.level||'rct'}">${getLevelLabel(v.actu.level)}</span></div>
       <div class="actu-title">${v.actu.title||''}</div>
       <div class="actu-body">${v.actu.summary||''}</div>
       ${v.actu.impact?`<div class="impact-box"><div class="impact-label">Impact clinique</div>${v.actu.impact}</div>`:''}
-      ${v.actu.url?`<a class="source-link" href="${v.actu.url}" target="_blank" rel="noopener">📄 Accéder à la publication</a>`:''}
+      ${link?`<a class="source-link" href="${link}" target="_blank" rel="noopener">📄 Rechercher sur PubMed</a>`:''}
     </div></div>`;
+  }
   if(v.briefs?.length) {
     html+=`<div class="section-block"><div class="section-block-label">En bref</div>`;
-    v.briefs.forEach(b=>{html+=`<div class="brief-item"><div class="brief-theme">${b.theme||''}</div><div class="brief-text">${b.text||''}</div>${b.impl?`<div class="brief-impl"><strong>→ Implication :</strong> ${b.impl}</div>`:''}${b.url?`<a class="brief-link" href="${b.url}" target="_blank" rel="noopener">📄 Source</a>`:''}</div>`;});
+    v.briefs.forEach(b=>{
+      const link = b.url || pubmedUrl(b.pubmed);
+      html+=`<div class="brief-item"><div class="brief-theme">${b.theme||''}</div><div class="brief-text">${b.text||''}</div>${b.impl?`<div class="brief-impl"><strong>→ Implication :</strong> ${b.impl}</div>`:''}${link?`<a class="brief-link" href="${link}" target="_blank" rel="noopener">📄 PubMed</a>`:''}</div>`;
+    });
     html+=`</div>`;
   }
   if(v.surveiller) html+=`<div class="section-block"><div class="section-block-label">À surveiller</div><div class="surveiller-box">⚠️ ${v.surveiller}</div></div>`;
@@ -554,22 +565,21 @@ function getThemeLabels(){return settings.themes.map(k=>{const t=ALL_THEMES.find
 
 function buildSystemPrompt(){
   return `Tu es un assistant de veille scientifique médicale spécialisé pour un anesthésiste-réanimateur.
-Tu as accès à la recherche web. Utilise-la pour trouver les DOI et PMID exacts des études que tu cites.
 Tu dois répondre UNIQUEMENT avec un objet JSON valide, sans balises markdown, sans backticks, sans texte avant ou après.
-RÈGLE ABSOLUE pour les URLs : n'inclus un champ "url" QUE si tu as vérifié le lien via recherche web et qu'il est réel. Si tu n'as pas pu vérifier, omets complètement le champ "url". Ne génère jamais un DOI ou PMID inventé.
+Pour chaque étude citée, fournis un champ "pubmed" contenant les termes de recherche optimaux pour retrouver l'article sur PubMed : nom du premier auteur, 2-3 mots clés du titre, année. Ces termes serviront à construire une URL de recherche PubMed réelle.
 Format JSON attendu :
 {
   "actu": {
     "title": "Titre complet et exact de l'étude phare",
     "source": "Auteur1 et al., Journal, année;volume:pages",
     "level": "rct|meta|obs|reco|expert",
-    "url": "https://doi.org/... (uniquement si vérifié par recherche web)",
+    "pubmed": "Hernandez septic shock capillary refill 2025",
     "summary": "Résumé en 2-3 phrases.",
     "impact": "Impact clinique direct sur la pratique."
   },
   "briefs": [
-    {"theme": "Thème", "text": "Phrase d'essentiel avec référence précise.", "impl": "Implication pratique.", "url": "https://pubmed.ncbi.nlm.nih.gov/... (uniquement si vérifié)"},
-    {"theme": "Thème", "text": "Phrase d'essentiel avec référence précise.", "impl": "Implication pratique.", "url": "https://pubmed.ncbi.nlm.nih.gov/... (uniquement si vérifié)"}
+    {"theme": "Thème", "text": "Phrase d'essentiel avec référence précise.", "impl": "Implication pratique.", "pubmed": "Ahmad difficult airway videolaryngoscopy 2025"},
+    {"theme": "Thème", "text": "Phrase d'essentiel avec référence précise.", "impl": "Implication pratique.", "pubmed": "mots clés auteur année"}
   ],
   "surveiller": "Description d'un essai en cours ou guideline attendue.",
   "reflexe": {
@@ -595,7 +605,7 @@ async function generateVeille(){
   document.getElementById('gen-btn').classList.add('loading');
   try {
     // Appel via le proxy Netlify — pas d'exposition de clé API côté client
-    const resp = await fetch('/api/claude', {
+    const resp = await fetch('https://veille.nanouchou.uk/api/claude', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
