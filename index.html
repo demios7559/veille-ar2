@@ -565,40 +565,47 @@ function getThemeLabels(){return settings.themes.map(k=>{const t=ALL_THEMES.find
 
 function buildSystemPrompt(){
   return `Tu es un assistant de veille scientifique médicale spécialisé pour un anesthésiste-réanimateur.
+Tu as accès à la recherche web.
+
+PROCESSUS OBLIGATOIRE en 2 étapes :
+1. Commence par faire 3 à 5 recherches web pour trouver de vraies publications médicales récentes (moins de 3 mois) sur les thématiques demandées. Recherche sur PubMed, NEJM, Lancet, BJA, Anesthesiology, Critical Care Medicine, SFAR, ESA, ESICM.
+2. Rédige la veille UNIQUEMENT à partir des articles que tu as réellement trouvés et vérifiés via ces recherches.
+
+RÈGLE ABSOLUE : Ne cite jamais un article que tu n'as pas trouvé via recherche web dans cette session. Si tu ne trouves pas d'article récent sur un thème, indique-le.
+
 Tu dois répondre UNIQUEMENT avec un objet JSON valide, sans balises markdown, sans backticks, sans texte avant ou après.
-Pour chaque étude citée, fournis un champ "pubmed" contenant les termes de recherche optimaux pour retrouver l'article sur PubMed : nom du premier auteur, 2-3 mots clés du titre, année. Ces termes serviront à construire une URL de recherche PubMed réelle.
+Pour chaque étude, fournis l'URL exacte trouvée lors de ta recherche.
+
 Format JSON attendu :
 {
   "actu": {
-    "title": "Titre complet et exact de l'étude phare",
-    "source": "Auteur1 et al., Journal, année;volume:pages",
+    "title": "Titre exact tel que trouvé lors de la recherche",
+    "source": "Auteurs exacts, Journal, année;volume:pages",
     "level": "rct|meta|obs|reco|expert",
-    "pubmed": "Hernandez septic shock capillary refill 2025",
-    "summary": "Résumé en 2-3 phrases.",
+    "url": "https://doi.org/... ou URL exacte trouvée",
+    "summary": "Résumé en 2-3 phrases basé sur l'article réel.",
     "impact": "Impact clinique direct sur la pratique."
   },
   "briefs": [
-    {"theme": "Thème", "text": "Phrase d'essentiel avec référence précise.", "impl": "Implication pratique.", "pubmed": "Ahmad difficult airway videolaryngoscopy 2025"},
-    {"theme": "Thème", "text": "Phrase d'essentiel avec référence précise.", "impl": "Implication pratique.", "pubmed": "mots clés auteur année"}
+    {"theme": "Thème", "text": "Résumé basé sur l'article réel avec référence exacte.", "impl": "Implication pratique.", "url": "URL exacte trouvée"},
+    {"theme": "Thème", "text": "Résumé basé sur l'article réel avec référence exacte.", "impl": "Implication pratique.", "url": "URL exacte trouvée"}
   ],
-  "surveiller": "Description d'un essai en cours ou guideline attendue.",
+  "surveiller": "Essai en cours ou guideline attendue trouvée via recherche.",
   "reflexe": {
     "text": "Point pratique actionnable avec étapes si besoin.",
     "mnemonic": "Mnémotechnique ou formule courte optionnelle."
   },
   "question": "Une question de réflexion pour approfondir."
-}`;
-}
+}`;}
 
 function buildUserPrompt(){
   const date=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   return `Date d'aujourd'hui : ${date}.
 Génère une veille médicale de ${settings.duration} minutes de lecture en ${settings.lang}.
 Thématiques prioritaires : ${getThemeLabels()}.
-Sources à privilégier : Anesthesiology, BJA, NEJM, Lancet, JAMA, Critical Care Medicine, Intensive Care Medicine, recommandations SFAR et ESA.
-Privilégier les données des 3 derniers mois. Indiquer le niveau de preuve.
-Retourne uniquement le JSON, aucun autre texte.`;
-}
+Commence par chercher sur le web des publications réelles et récentes (moins de 3 mois) sur ces thématiques dans : Anesthesiology, BJA, NEJM, Lancet, JAMA, Critical Care Medicine, Intensive Care Medicine, PubMed, SFAR, ESA.
+Rédige la veille uniquement à partir de ce que tu trouves. Indique le niveau de preuve.
+Retourne uniquement le JSON, aucun autre texte.`;}
 
 async function generateVeille(){
   showLoader();
