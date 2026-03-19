@@ -611,15 +611,14 @@ async function generateVeille(){
   showLoader();
   document.getElementById('gen-btn').classList.add('loading');
   try {
-    // Appel via le proxy Netlify — pas d'exposition de clé API côté client
     const resp = await fetch('https://veille.nanouchou.uk/api/claude', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:2000,
-        system: buildSystemPrompt(),
-        messages:[{role:'user', content: buildUserPrompt()}]
+        themes: getThemeLabels(),
+        duration: settings.duration,
+        lang: settings.lang,
+        date: new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})
       })
     });
     if(!resp.ok) throw new Error('Erreur serveur: '+resp.status);
